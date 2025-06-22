@@ -7,7 +7,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:8000', {
+    const newSocket = io('https://room-booking-system-backend-7exv.onrender.com', {
       transports: ['websocket'],
       reconnectionAttempts: 5,
       timeout: 10000,
