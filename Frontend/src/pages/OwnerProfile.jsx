@@ -45,6 +45,7 @@ const OwnerProfile = () => {
       const res = await axios.get(`${BASE}/api/v1/owner/profile`, {
         withCredentials: true,
       });
+      console.log(BASE);
       if (res.data.success) {
         const { owner, notifications } = res.data.data;
         setOwnerData(owner);

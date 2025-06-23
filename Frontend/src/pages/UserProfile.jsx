@@ -14,6 +14,9 @@ import {
   FaSignOutAlt,
   FaBell,
 } from "react-icons/fa";
+
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const UserProfile = () => {
   const socket = useSocket();
   const navigate = useNavigate();
@@ -25,7 +28,7 @@ const UserProfile = () => {
     phoneNo: "",
   });
 
-  const BASE = import.meta.env.VITE_API_BASE_URL;
+  
 
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -53,6 +56,7 @@ const UserProfile = () => {
       const res = await axios.get(`${BASE}/api/v1/users/profile`, {
         withCredentials: true,
       });
+      console.log(BASE);
       if (res.data.success) {
         const { user, notifications } = res.data.data;
         setUserData(user);
