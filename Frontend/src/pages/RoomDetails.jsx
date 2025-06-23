@@ -18,6 +18,8 @@ import {
   FaPhoneAlt,
 } from "react-icons/fa";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const RoomDetails = () => {
   const { id } = useParams();
   const [room, setRoom] = useState(null);
@@ -38,7 +40,7 @@ const RoomDetails = () => {
 
   const fetchRoomDetails = async () => {
     try {
-      const res = await axios.get(`/api/v1/rooms/${id}`);
+      const res = await axios.get(`${BASE}/api/v1/rooms/${id}`);
       setRoom(res.data.data);
     } catch (error) {
       console.error("Error fetching room data", error);
@@ -51,7 +53,7 @@ const RoomDetails = () => {
   const checkBookingStatus = async () => {
     if (!usertoken || isOwner) return;
     try {
-      const res = await axios.get(`/api/v1/booking/user-booking/${id}`, {
+      const res = await axios.get(`${BASE}/api/v1/booking/user-booking/${id}`, {
         headers: {
           Authorization: `Bearer ${usertoken}`,
         },
@@ -82,7 +84,7 @@ const RoomDetails = () => {
       }
 
       const res = await axios.post(
-        `/api/v1/booking/create-booking/${id}`,
+        `${BASE}/api/v1/booking/create-booking/${id}`,
         {},
         {
           headers: {
@@ -104,7 +106,7 @@ const RoomDetails = () => {
 
   const handleUnbook = async () => {
     try {
-      const res = await axios.delete(`/api/v1/booking/unbook/${id}`, {
+      const res = await axios.delete(`${BASE}/api/v1/booking/unbook/${id}`, {
         headers: {
           Authorization: `Bearer ${usertoken}`,
         },
@@ -123,7 +125,7 @@ const RoomDetails = () => {
   const submitFeedback = async () => {
     try {
       await axios.post(
-        `/api/v1/rooms/${id}/feedback`,
+        `${BASE}/api/v1/rooms/${id}/feedback`,
         feedback,
         {
           headers: {

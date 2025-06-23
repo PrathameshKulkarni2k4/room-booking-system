@@ -9,6 +9,8 @@ import {
 } from "react-icons/fa";
 import RoomFinderLoader from "../components/RoomFinderLoader";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const facilityIcons = {
   "Wi-Fi": <FaWifi title="Wi-Fi" />, "Hot Water": <FaShower title="Hot Water" />, "Kitchen": <FaUtensils title="Kitchen" />,
   "Parking": <FaCar title="Parking" />, "Attach Bathroom": <FaShower title="Attach Bathroom" />, "Balcony": <FaTv title="Balcony" />,
@@ -38,7 +40,7 @@ const AvailableRooms = () => {
         maxPrice,
         ...(selectedFacilities.length && { facilities: selectedFacilities.join(",") })
       };
-      const response = await axios.get("/api/v1/rooms/available", { params });
+      const response = await axios.get(`${BASE}/api/v1/rooms/available`, { params });
       setRooms(response.data.data || []);
     } catch (err) {
       console.error("Error fetching rooms:", err);
@@ -67,7 +69,7 @@ const AvailableRooms = () => {
             maxPrice,
             ...(selectedFacilities.length && { facilities: selectedFacilities.join(",") })
           };
-          const response = await axios.get("/api/v1/rooms/nearby", { params });
+          const response = await axios.get(`${BASE}/api/v1/rooms/nearby`, { params });
           setNearbyRooms(response.data.data || []);
         } catch (err) {
           console.error("Error fetching nearby rooms:", err);

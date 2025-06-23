@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const EditRoom = () => {
   const { roomId } = useParams(); // Extract roomId from URL params
   const [status, setStatus] = useState("Available");
@@ -18,7 +20,7 @@ const EditRoom = () => {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
-        const res = await axios.get(`/api/v1/rooms/${roomId}`, {
+        const res = await axios.get(`${BASE}/api/v1/rooms/${roomId}`, {
           withCredentials: true,
         });
         const room = res.data.data;
@@ -36,7 +38,7 @@ const EditRoom = () => {
   const updateRoom = async () => {
     try {
       const res = await axios.patch(
-        `/api/v1/rooms/${roomId}`,
+        `${BASE}/api/v1/rooms/${roomId}`,
         { price, status, facilities },
         { withCredentials: true }
       );

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"
 import axios from "axios";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const Notification = () => {
   const { notificationId } = useParams();
   const navigate = useNavigate();
@@ -12,7 +14,7 @@ const Notification = () => {
 
   const fetchNotification = async () => {
     try {
-      const res = await axios.get(`/api/v1/owner/notifications/${notificationId}`, {
+      const res = await axios.get(`${BASE}/api/v1/owner/notifications/${notificationId}`, {
         withCredentials: true,
       });
       setNotification(res.data.data);

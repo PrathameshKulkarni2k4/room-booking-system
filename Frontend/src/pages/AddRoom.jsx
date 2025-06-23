@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const AddRoom = () => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -53,7 +55,7 @@ const AddRoom = () => {
     
     try {
       const response = await axios.post(
-        "/api/v1/rooms/register",
+        `${BASE}/api/v1/rooms/register`,
         formData,
         {
           headers: {

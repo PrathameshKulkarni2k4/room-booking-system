@@ -6,6 +6,8 @@ import { toast, ToastContainer } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 import signupImg from "../assets/home.png";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const Signup = () => {
   const navigate = useNavigate();
   const {
@@ -55,7 +57,7 @@ const Signup = () => {
     setEmailStatus("");
 
     try {
-      await axios.post("/api/v1/verify/send-code", { email });
+      await axios.post(`${BASE}/api/v1/verify/send-code`, { email });
       setStep(2);
       setTimer(60);
       setCountdownActive(true);
@@ -76,7 +78,7 @@ const Signup = () => {
     }
 
     try {
-      await axios.post("/api/v1/verify/verify-code", { email, code });
+      await axios.post(`${BASE}/api/v1/verify/verify-code`, { email, code });
       setEmailVerified(true);
       setStep(3);
       toast.success("Email verified successfully!");
@@ -109,7 +111,7 @@ const Signup = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post("/api/v1/users/register", payload, {
+      const res = await axios.post(`${BASE}/api/v1/users/register`, payload, {
         headers: {
           "Content-Type": "application/json",
         },

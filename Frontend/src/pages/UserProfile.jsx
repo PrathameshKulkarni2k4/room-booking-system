@@ -25,6 +25,8 @@ const UserProfile = () => {
     phoneNo: "",
   });
 
+  const BASE = import.meta.env.VITE_API_BASE_URL;
+
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -48,7 +50,7 @@ const UserProfile = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const res = await axios.get("/api/v1/users/profile", {
+      const res = await axios.get(`${BASE}/api/v1/users/profile`, {
         withCredentials: true,
       });
       if (res.data.success) {
@@ -65,7 +67,7 @@ const UserProfile = () => {
 
   const fetchAllocatedRooms = async () => {
     try {
-      const response = await axios.get("/api/v1/booking/user-rooms", {
+      const response = await axios.get(`${BASE}/api/v1/booking/user-rooms`, {
         withCredentials: true,
       });
 
@@ -109,7 +111,7 @@ const UserProfile = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.patch("/api/v1/users/profile", userData, {
+      const res = await axios.patch(`${BASE}/api/v1/users/profile`, userData, {
         withCredentials: true,
         headers: { "Content-Type": "application/json" },
       });
@@ -126,7 +128,7 @@ const UserProfile = () => {
     e.preventDefault();
     try {
       const res = await axios.patch(
-        "/api/v1/users/profile/password",
+        `${BASE}/api/v1/users/profile/password`,
         passwordData,
         {
           withCredentials: true,
@@ -145,7 +147,7 @@ const UserProfile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/v1/users/logout", {}, { withCredentials: true });
+      await axios.post(`${BASE}/api/v1/users/logout`, {}, { withCredentials: true });
       localStorage.clear();
       window.location.href = "/";
     } catch (error) {

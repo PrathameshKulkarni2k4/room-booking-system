@@ -6,6 +6,8 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"; // Importin
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const OwnerLogin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ identifier: "", password: "" });
@@ -30,7 +32,7 @@ const OwnerLogin = () => {
         payload.username = formData.identifier;
       }
 
-      const response = await axios.post("/api/v1/owner/login", payload);
+      const response = await axios.post(`${BASE}/api/v1/owner/login`, payload);
 
       if (response.status === 200) {
         const { accessToken, user } = response.data.data;

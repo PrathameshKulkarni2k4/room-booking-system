@@ -14,6 +14,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 const OwnerProfile = () => {
   const socket = useSocket();
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ const OwnerProfile = () => {
 
   const fetchOwnerProfile = async () => {
     try {
-      const res = await axios.get("/api/v1/owner/profile", {
+      const res = await axios.get(`${BASE}/api/v1/owner/profile`, {
         withCredentials: true,
       });
       if (res.data.success) {
@@ -79,7 +81,7 @@ const OwnerProfile = () => {
   const handleUpdateOwnerDetails = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.patch("/api/v1/owner/profile", {
+      const res = await axios.patch(`${BASE}/api/v1/owner/profile`, {
         fullName: ownerData.fullName,
         username: ownerData.username,
         phoneNo: ownerData.phoneNo
@@ -102,7 +104,7 @@ const OwnerProfile = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`/api/v1/rooms/${roomId}`, { withCredentials: true });
+      await axios.delete(`${BASE}/api/v1/rooms/${roomId}`, { withCredentials: true });
       setOwnerData((prevData) => ({
         ...prevData,
         rooms: prevData.rooms.filter((room) => room._id !== roomId),
@@ -118,7 +120,7 @@ const OwnerProfile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/v1/owner/logout", {}, { withCredentials: true });
+      await axios.post(`${BASE}/api/v1/owner/logout`, {}, { withCredentials: true });
       localStorage.clear();
       window.location.href = "/";
     } catch (error) {
