@@ -16,6 +16,17 @@ import { useSocket } from "../context/SocketContext";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("ownertoken");
+  return {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+};
+
 const OwnerProfile = () => {
   const socket = useSocket();
   const navigate = useNavigate();
@@ -33,19 +44,14 @@ const OwnerProfile = () => {
       const timer = setTimeout(() => {
         setMessage("");
         setError("");
-      }, 3000); 
-
-      return () => clearTimeout(timer); 
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [message, error]);
 
-
   const fetchOwnerProfile = async () => {
     try {
-      const res = await axios.get(`${BASE}/api/v1/owner/profile`, {
-        withCredentials: true,
-      });
-      console.log(BASE);
+      const res = await axios.get(`${BASE}/api/v1/owner/profile`, getAuthHeaders());
       if (res.data.success) {
         const { owner, notifications } = res.data.data;
         setOwnerData(owner);
@@ -59,20 +65,15 @@ const OwnerProfile = () => {
 
   useEffect(() => {
     fetchOwnerProfile();
-
     if (!socket) return;
 
     const handleNewNotification = (notification) => {
-      console.log('📩 New notification received:', notification);
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
     };
 
     socket.on("new-notification", handleNewNotification);
-
-    return () => {
-      socket.off("new-notification", handleNewNotification);
-    };
+    return () => socket.off("new-notification", handleNewNotification);
   }, [socket]);
 
   const handleInputChange = (e) => {
@@ -82,14 +83,15 @@ const OwnerProfile = () => {
   const handleUpdateOwnerDetails = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.patch(`${BASE}/api/v1/owner/profile`, {
-        fullName: ownerData.fullName,
-        username: ownerData.username,
-        phoneNo: ownerData.phoneNo
-      }, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" }
-      });
+      const res = await axios.patch(
+        `${BASE}/api/v1/owner/profile`,
+        {
+          fullName: ownerData.fullName,
+          username: ownerData.username,
+          phoneNo: ownerData.phoneNo,
+        },
+        getAuthHeaders()
+      );
       setMessage(res.data.message);
       setError("");
       setEditMode(false);
@@ -105,34 +107,35 @@ const OwnerProfile = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`${BASE}/api/v1/rooms/${roomId}`, { withCredentials: true });
+      await axios.delete(`${BASE}/api/v1/rooms/${roomId}`, getAuthHeaders());
       setOwnerData((prevData) => ({
         ...prevData,
         rooms: prevData.rooms.filter((room) => room._id !== roomId),
       }));
-      // Set a success message that will auto-disappear
       setMessage("Room deleted successfully!");
     } catch (error) {
       console.error("Failed to delete room:", error);
-      // Set an error message that will auto-disappear
       setError("Failed to delete room.");
     }
   };
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${BASE}/api/v1/owner/logout`, {}, { withCredentials: true });
+      await axios.post(`${BASE}/api/v1/owner/logout`, {}, getAuthHeaders());
       localStorage.clear();
       window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
-      // Set an error message that will auto-disappear
       setError("Failed to log out.");
     }
   };
 
   if (!ownerData) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-700">Loading profile...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-700">
+        Loading profile...
+      </div>
+    );
   }
 
   return (

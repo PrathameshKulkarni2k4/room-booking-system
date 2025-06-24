@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   server: {
     proxy: {
-      '/api': 'https://room-booking-system-backend-7exv.onrender.com',
+      '/api': 'http://localhost:8000',
     },
   },
   plugins: [react()],

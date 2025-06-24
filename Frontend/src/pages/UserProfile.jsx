@@ -17,6 +17,17 @@ import {
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("usertoken");
+  return {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+};
+
 const UserProfile = () => {
   const socket = useSocket();
   const navigate = useNavigate();
@@ -27,8 +38,6 @@ const UserProfile = () => {
     email: "",
     phoneNo: "",
   });
-
-  
 
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -50,13 +59,9 @@ const UserProfile = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [userRooms, setUserRooms] = useState([]);
 
-
   const fetchUserProfile = async () => {
     try {
-      const res = await axios.get(`${BASE}/api/v1/users/profile`, {
-        withCredentials: true,
-      });
-      console.log(BASE);
+      const res = await axios.get(`${BASE}/api/v1/users/profile`, getAuthHeaders());
       if (res.data.success) {
         const { user, notifications } = res.data.data;
         setUserData(user);
@@ -71,24 +76,16 @@ const UserProfile = () => {
 
   const fetchAllocatedRooms = async () => {
     try {
-      const response = await axios.get(`${BASE}/api/v1/booking/user-rooms`, {
-        withCredentials: true,
-      });
-
-      console.log(response);
+      const response = await axios.get(`${BASE}/api/v1/booking/user-rooms`, getAuthHeaders());
       setAllocatedRooms(response.data.data || []);
       setUserRooms(response.data.data || []);
     } catch (error) {
       console.error("Error fetching allocated rooms:", error);
-      if (error.response && error.response.data?.message) {
-        setErrorMsg(error.response.data.message);
-      } else {
-        setErrorMsg("Failed to fetch allocated rooms.");
-      }
+      setErrorMsg(error.response?.data?.message || "Failed to fetch allocated rooms.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchUserProfile();
@@ -115,10 +112,7 @@ const UserProfile = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.patch(`${BASE}/api/v1/users/profile`, userData, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await axios.patch(`${BASE}/api/v1/users/profile`, userData, getAuthHeaders());
       setMessage(res.data.message);
       setError("");
       setEditMode(false);
@@ -134,10 +128,7 @@ const UserProfile = () => {
       const res = await axios.patch(
         `${BASE}/api/v1/users/profile/password`,
         passwordData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
-        }
+        getAuthHeaders()
       );
       setMessage(res.data.message);
       setError("");
@@ -151,7 +142,7 @@ const UserProfile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${BASE}/api/v1/users/logout`, {}, { withCredentials: true });
+      await axios.post(`${BASE}/api/v1/users/logout`, {}, getAuthHeaders());
       localStorage.clear();
       window.location.href = "/";
     } catch (error) {
@@ -161,6 +152,7 @@ const UserProfile = () => {
   };
 
   return (
+
     <div className="min-h-screen bg-gray-50 text-gray-800 py-10 px-4">
       <div className="max-w-6xl mx-auto space-y-6 relative">
         {/* Top Actions */}
