@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"
+import { toast } from "react-toastify";
 import axios from "axios";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("ownertoken") || localStorage.getItem("usertoken");
+  return {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+};
+
 
 const Notification = () => {
   const { notificationId } = useParams();
@@ -14,9 +26,10 @@ const Notification = () => {
 
   const fetchNotification = async () => {
     try {
-      const res = await axios.get(`${BASE}/api/v1/owner/notifications/${notificationId}`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${BASE}/api/v1/owner/notifications/${notificationId}`,
+        getAuthHeaders()
+      );
       setNotification(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch notification.");
@@ -65,12 +78,12 @@ const Notification = () => {
             onClick={async () => {
               try {
                 await axios.patch(
-                  `/api/v1/booking/${notification.booking._id}`,
+                  `${BASE}/api/v1/booking/${notification.booking._id}`,
                   {
                     status: "approved",
                     notificationId: notification._id,
                   },
-                  { withCredentials: true }
+                  getAuthHeaders()
                 );
                 toast.success("Booking approved and user notified.");
                 navigate(-1);
@@ -88,12 +101,12 @@ const Notification = () => {
             onClick={async () => {
               try {
                 await axios.patch(
-                  `/api/v1/booking/${notification.booking._id}`,
+                  `${BASE}/api/v1/booking/${notification.booking._id}`,
                   {
                     status: "rejected",
                     notificationId: notification._id,
                   },
-                  { withCredentials: true }
+                  getAuthHeaders()
                 );
                 toast.success("Booking rejected and user notified.");
                 navigate(-1);
