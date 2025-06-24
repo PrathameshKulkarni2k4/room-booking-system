@@ -184,7 +184,7 @@ const UserProfile = () => {
                     setIsClearing(true);
                     try {
                       await axios.delete(
-                        "/api/v1/users/notifications/clear",
+                        `${BASE}/api/v1/users/notifications/clear`,
                         {
                           withCredentials: true,
                         }

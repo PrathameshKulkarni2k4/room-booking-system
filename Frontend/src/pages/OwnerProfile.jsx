@@ -170,7 +170,7 @@ const OwnerProfile = () => {
                   onClick={async () => {
                     setIsClearing(true);
                     try {
-                      await axios.delete("/api/v1/owner/notifications/clear", {
+                      await axios.delete(`${BASE}/api/v1/owner/notifications/clear`, {
                         withCredentials: true,
                       });
                       setNotifications([]);
