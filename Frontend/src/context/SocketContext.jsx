@@ -18,6 +18,8 @@ export const SocketProvider = ({ children }) => {
       reconnectionDelayMax: 5000,
     });
 
+    console.log(BASE);
+
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
