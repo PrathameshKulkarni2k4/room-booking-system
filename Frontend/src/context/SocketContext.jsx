@@ -3,11 +3,13 @@ import { io } from "socket.io-client";
 
 export const SocketContext = createContext();
 
+const BASE = import.meta.env.VITE_API_BASE_URL;
+
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('https://room-booking-system-backend-7exv.onrender.com', {
+    const newSocket = io(`${BASE}`, {
       transports: ['websocket'],
       reconnectionAttempts: 5,
       timeout: 10000,
