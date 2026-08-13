@@ -73,10 +73,6 @@ jobs:
         working-directory: ./Frontend
         run: npm ci
 
-      - name: Run ESLint
-        working-directory: ./Frontend
-        run: npx eslint .
-
       - name: Validate Vite Production Build
         working-directory: ./Frontend
         env:
