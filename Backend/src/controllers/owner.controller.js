@@ -24,7 +24,6 @@ const registerOwner = asyncHandler(async (req, res) => {
 
   console.log(req.body);
 
-
   if (
     [fullName, email, username, password, phoneNo].some(
       (field) => !field || field.trim() === ""
@@ -34,7 +33,7 @@ const registerOwner = asyncHandler(async (req, res) => {
   }
 
   const existedOwner = await Owner.findOne({
-    $or: [{ username }, { email }]
+    $or: [{ username }, { email }],
   });
 
   if (existedOwner) {
@@ -46,7 +45,7 @@ const registerOwner = asyncHandler(async (req, res) => {
     email,
     password,
     username,
-    phoneNo
+    phoneNo,
   });
 
   const createdOwner = await Owner.findById(owner._id).select(
@@ -57,9 +56,9 @@ const registerOwner = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering an owner");
   }
 
-  return res.status(201).json(
-    new ApiResponse(200, createdOwner, "Owner registered successfully")
-  );
+  return res
+    .status(201)
+    .json(new ApiResponse(200, createdOwner, "Owner registered successfully"));
 });
 
 const loginOwner = asyncHandler(async (req, res) => {
@@ -70,7 +69,7 @@ const loginOwner = asyncHandler(async (req, res) => {
   }
 
   const owner = await Owner.findOne({
-    $or: [{ username }, { email }]
+    $or: [{ username }, { email }],
   });
 
   if (!owner) {
@@ -83,13 +82,17 @@ const loginOwner = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(owner._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    owner._id
+  );
 
-  const loggedInOwner = await Owner.findById(owner._id).select("-password -refreshToken");
+  const loggedInOwner = await Owner.findById(owner._id).select(
+    "-password -refreshToken"
+  );
 
   const options = {
     httpOnly: true,
-    secure: true
+    secure: true,
   };
 
   return res
@@ -97,11 +100,15 @@ const loginOwner = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
-      new ApiResponse(200, {
-        user: loggedInOwner,
-        accessToken,
-        refreshToken
-      }, "Owner logged in successfully")
+      new ApiResponse(
+        200,
+        {
+          user: loggedInOwner,
+          accessToken,
+          refreshToken,
+        },
+        "Owner logged in successfully"
+      )
     );
 });
 
@@ -114,7 +121,7 @@ const logoutOwner = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true
+    secure: true,
   };
 
   return res
@@ -127,17 +134,28 @@ const logoutOwner = asyncHandler(async (req, res) => {
 const getOwnerProfile = asyncHandler(async (req, res) => {
   const ownerId = req.user._id;
 
-  const owner = await Owner.findById(ownerId).select("-password -refreshToken").populate("rooms");
+  const owner = await Owner.findById(ownerId)
+    .select("-password -refreshToken")
+    .populate("rooms");
 
   if (!owner) {
-    throw new ApiError(404, "Owner not found")
+    throw new ApiError(404, "Owner not found");
   }
 
-  const notifications = await Notification.find({ receiver: ownerId, read: false }).sort({ createdAt: -1 });
+  const notifications = await Notification.find({
+    receiver: ownerId,
+    read: false,
+  }).sort({ createdAt: -1 });
 
-  return res.status(200).json(
-    new ApiResponse(200, { owner, notifications }, "owner fetched successfully")
-  )
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { owner, notifications },
+        "owner fetched successfully"
+      )
+    );
 });
 
 const updateOwnerDetails = asyncHandler(async (req, res) => {
@@ -145,7 +163,10 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
 
   // Check if at least one field is provided
   if (!username && !fullName && !phoneNo) {
-    throw new ApiError(400, "At least one field (username, fullName, or phoneNo) must be provided");
+    throw new ApiError(
+      400,
+      "At least one field (username, fullName, or phoneNo) must be provided"
+    );
   }
 
   // Initialize update object
@@ -179,7 +200,7 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
   if (username) {
     const existingOwner = await Owner.findOne({
       username: username.toLowerCase(),
-      _id: { $ne: req.user._id }
+      _id: { $ne: req.user._id },
     });
     if (existingOwner) {
       throw new ApiError(409, "Username already taken");
@@ -190,7 +211,7 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
   if (phoneNo) {
     const existingPhone = await Owner.findOne({
       phoneNo,
-      _id: { $ne: req.user._id }
+      _id: { $ne: req.user._id },
     });
     if (existingPhone) {
       throw new ApiError(409, "Phone number already in use");
@@ -198,14 +219,10 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
   }
 
   // Perform the update
-  const updatedOwner = await Owner.findByIdAndUpdate(
-    req.user._id,
-    updateData,
-    {
-      new: true,
-      runValidators: true
-    }
-  ).select("-password -refreshToken");
+  const updatedOwner = await Owner.findByIdAndUpdate(req.user._id, updateData, {
+    new: true,
+    runValidators: true,
+  }).select("-password -refreshToken");
 
   if (!updatedOwner) {
     throw new ApiError(404, "User not found");
@@ -213,7 +230,9 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedOwner, "User details updated successfully"));
+    .json(
+      new ApiResponse(200, updatedOwner, "User details updated successfully")
+    );
 });
 
 export {
@@ -221,5 +240,5 @@ export {
   loginOwner,
   logoutOwner,
   getOwnerProfile,
-  updateOwnerDetails
+  updateOwnerDetails,
 };

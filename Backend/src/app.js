@@ -7,15 +7,17 @@ import { Server } from "socket.io";
 import { initializeSocket } from "./utils/socket.js";
 import dotenv from "dotenv";
 
-dotenv.config({ path: './.env' });
+dotenv.config({ path: "./.env" });
 
 const app = express();
 
 // Middleware setup
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "16kb" })); // Set a limit for JSON body size
 app.use(express.urlencoded({ extended: true, limit: "16kb" })); // Set a limit for URL-encoded body size
@@ -30,21 +32,21 @@ const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN, // Allow frontend from this origin
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 // Initialize socket events
 initializeSocket(io);
-app.set('io', io);
+app.set("io", io);
 
 // Import routes
-import userRouter from './routes/user.route.js';
-import roomRouter from './routes/room.route.js';
-import ownerRouter from './routes/owner.route.js';
-import verificationRouter from './routes/verification.route.js';
-import bookingRouter from './routes/booking.route.js';
-import paymentRouter from './routes/payment.route.js';
+import userRouter from "./routes/user.route.js";
+import roomRouter from "./routes/room.route.js";
+import ownerRouter from "./routes/owner.route.js";
+import verificationRouter from "./routes/verification.route.js";
+import bookingRouter from "./routes/booking.route.js";
+import paymentRouter from "./routes/payment.route.js";
 
 // Use the imported routes for specific API paths
 app.use("/api/v1/users", userRouter);

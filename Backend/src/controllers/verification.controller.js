@@ -8,11 +8,11 @@ const verificationCodes = new Map();
 
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  }
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
 });
 
 const generateVerificationCode = () => {
@@ -23,8 +23,7 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   console.log(email);
-  
-  
+
   // Validate email format
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ApiError(400, "Please provide a valid email address");
@@ -35,14 +34,14 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
   verificationCodes.set(email, {
     code,
     expires: Date.now() + 10 * 60 * 1000, // 15 minutes expiration
-    verified: false
+    verified: false,
   });
 
   // Prepare email
   const mailOptions = {
     from: `RoomBuddy <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Verify Your Email Address',
+    subject: "Verify Your Email Address",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Email Verification</h2>
@@ -53,7 +52,7 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
         <p>This code will expire in 10 minutes.</p>
         <p>If you didn't request this, please ignore this email.</p>
       </div>
-    `
+    `,
   };
 
   // Send email
@@ -67,23 +66,29 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
 
 const verifyCode = asyncHandler(async (req, res) => {
   const { email, code } = req.body;
-  
+
   // Basic validation
   if (!email || !code) {
     throw new ApiError(400, "Both email and verification code are required");
   }
 
   const record = verificationCodes.get(email);
-  
+
   // Check if verification was initiated
   if (!record) {
-    throw new ApiError(400, "No verification request found for this email. Please request a new code.");
+    throw new ApiError(
+      400,
+      "No verification request found for this email. Please request a new code."
+    );
   }
 
   // Check if code expired
   if (Date.now() > record.expires) {
     verificationCodes.delete(email);
-    throw new ApiError(400, "Verification code has expired. Please request a new one.");
+    throw new ApiError(
+      400,
+      "Verification code has expired. Please request a new one."
+    );
   }
 
   // Verify code
@@ -93,7 +98,7 @@ const verifyCode = asyncHandler(async (req, res) => {
 
   // Mark as verified
   verificationCodes.set(email, { ...record, verified: true });
-  
+
   return res
     .status(200)
     .json(new ApiResponse(200, { email }, "Email verified successfully"));
@@ -105,8 +110,4 @@ const isEmailVerified = (email) => {
   return record?.verified === true;
 };
 
-export { 
-  sendVerificationCode,
-  verifyCode,
-  isEmailVerified,
-};
+export { sendVerificationCode, verifyCode, isEmailVerified };
