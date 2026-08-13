@@ -1,0 +1,118 @@
+name: Room Booking System CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # =========================================================================
+  # 1. Backend CI: Linting, Syntax Verification, and Automated Tests
+  # =========================================================================
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: ./Backend
+        run: npm ci
+
+      - name: Check Code Formatting (Prettier)
+        working-directory: ./Backend
+        run: npx prettier --check "src/**/*.js"
+
+      - name: Run Backend Linter & Syntax Check
+        working-directory: ./Backend
+        run: npm run lint --if-present
+
+      - name: Run Backend Test Suite
+        working-directory: ./Backend
+        env:
+          NODE_ENV: test
+          PORT: 8000
+          CORS_ORIGIN: "http://localhost:5173"
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET || 'ci_test_access_token_secret' }}
+          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET || 'ci_test_refresh_token_secret' }}
+          ACCESS_TOKEN_EXPIRY: "1d"
+          REFRESH_TOKEN_EXPIRY: "10d"
+        run: npm test --if-present
+
+  # =========================================================================
+  # 2. Frontend CI: ESLint and Vite Production Build Validation
+  # =========================================================================
+  frontend-ci:
+    name: Frontend CI (Vite & ESLint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./Frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./Frontend
+        run: npx eslint .
+
+      - name: Validate Vite Production Build
+        working-directory: ./Frontend
+        env:
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || 'http://localhost:8000/api/v1' }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL || 'http://localhost:8000' }}
+        run: npm run build
+
+  # =========================================================================
+  # 3. Continuous Deployment (CD): Deploys on Push to Main
+  # =========================================================================
+  deploy:
+    name: Deploy Services
+    needs: [backend-ci, frontend-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # Deploy Backend to Render (via Deploy Hook)
+      - name: Deploy Backend to Render
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Backend deployment on Render..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+
+      # Deploy Frontend to Vercel (using vercel.json in Frontend/)
+      - name: Deploy Frontend to Vercel
+        if: env.VERCEL_TOKEN != ''
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./Frontend
+          vercel-args: '--prod'
