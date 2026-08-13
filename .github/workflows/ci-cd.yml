@@ -10,7 +10,7 @@ on:
 
 jobs:
   # =========================================================================
-  # 1. Backend CI
+  # 1. Backend CI: Prettier Code Style, Syntax, and Tests
   # =========================================================================
   backend-ci:
     name: Backend CI
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -31,11 +31,15 @@ jobs:
         working-directory: ./Backend
         run: npm install
 
+      - name: Check Code Formatting (Prettier)
+        working-directory: ./Backend
+        run: npx prettier --check "src/**/*.js"
+
       - name: Verify Backend Syntax
         working-directory: ./Backend
         run: node --check src/index.js
 
-      - name: Run Backend Tests (if present)
+      - name: Run Backend Tests
         working-directory: ./Backend
         env:
           NODE_ENV: test
@@ -47,7 +51,7 @@ jobs:
           fi
 
   # =========================================================================
-  # 2. Frontend CI (Vite Build & Lint)
+  # 2. Frontend CI: ESLint & Vite Production Build
   # =========================================================================
   frontend-ci:
     name: Frontend CI (Vite & ESLint)
@@ -57,7 +61,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -70,9 +74,9 @@ jobs:
 
       - name: Run ESLint
         working-directory: ./Frontend
-        run: npx eslint . --max-warnings=100 || true
+        run: npx eslint . --max-warnings=50 || true
 
-      - name: Build Frontend (Vite)
+      - name: Build Frontend with Vite
         working-directory: ./Frontend
         env:
           VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || 'http://localhost:8000/api/v1' }}
@@ -80,7 +84,7 @@ jobs:
         run: npm run build
 
   # =========================================================================
-  # 3. Continuous Deployment (CD)
+  # 3. Continuous Deployment (CD): Triggers on Push to Main
   # =========================================================================
   deploy:
     name: Deploy Services
