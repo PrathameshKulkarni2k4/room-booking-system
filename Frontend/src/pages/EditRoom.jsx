@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
@@ -37,10 +37,17 @@ const EditRoom = () => {
   // Update Room
   const updateRoom = async () => {
     try {
+      const token = localStorage.getItem("ownertoken");
       const res = await axios.patch(
         `${BASE}/api/v1/rooms/${roomId}`,
         { price, status, facilities },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
       );
       setMessage("Room updated successfully");
       console.log("Updated room:", res.data);

@@ -8,16 +8,53 @@ import {
   deleteFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
-import { Booking } from "../models/booking.model.js";
+
+const ALLOWED_FACILITIES = [
+  "Wi-Fi",
+  "Hot Water",
+  "Kitchen",
+  "Parking",
+  "Attach Bathroom",
+  "Balcony",
+  "Bed",
+  "Chair",
+  "Desk",
+  "Wardrobe",
+];
+
+const parseFacilities = (raw) => {
+  if (raw === undefined || raw === null) return undefined;
+  let value = raw;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      value = value.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  if (!Array.isArray(value)) {
+    throw new ApiError(400, "Facilities should be an array");
+  }
+  const invalid = value.find((f) => !ALLOWED_FACILITIES.includes(f));
+  if (invalid) {
+    throw new ApiError(400, `${invalid} is not a valid facility`);
+  }
+  return value;
+};
 
 const registerRoom = asyncHandler(async (req, res) => {
   const { name, address, price } = req.body;
 
-  const facilities = JSON.parse(req.body.facilities);
-
-  if (!name || !address || !price) {
+  if (!name || !address || price === undefined || price === "") {
     throw new ApiError(400, "Name, address and price are required");
   }
+
+  const numericPrice = Number(price);
+  if (Number.isNaN(numericPrice) || numericPrice < 0) {
+    throw new ApiError(400, "Price must be a non-negative number");
+  }
+
+  const facilities = parseFacilities(req.body.facilities) ?? [];
 
   let coordinates = req.body.coordinates;
   if (!coordinates || !coordinates.length) {
@@ -26,6 +63,8 @@ const registerRoom = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Invalid address. Unable to geocode.");
     }
     coordinates = [geoData[0].longitude, geoData[0].latitude];
+  } else if (typeof coordinates === "string") {
+    coordinates = JSON.parse(coordinates);
   }
 
   if (!req.files || req.files.length === 0) {
@@ -45,12 +84,9 @@ const registerRoom = asyncHandler(async (req, res) => {
   const newRoom = await Room.create({
     name,
     address,
-    location: {
-      type: "Point",
-      coordinates,
-    },
-    price,
-    facilities: facilities || [],
+    location: { type: "Point", coordinates },
+    price: numericPrice,
+    facilities,
     images: imageUrls,
     owner: req.user._id,
   });
@@ -107,7 +143,7 @@ const getNearbyAvailableRooms = asyncHandler(async (req, res) => {
   }
 
   const rooms = await Room.find(query)
-    .populate("owner", "username email phoneNo")
+    .populate("owner", "username fullName email phoneNo")
     .select("-__v");
 
   return res
@@ -118,9 +154,7 @@ const getNearbyAvailableRooms = asyncHandler(async (req, res) => {
 const getAvailableRooms = asyncHandler(async (req, res) => {
   const { minPrice, maxPrice, facilities } = req.query;
 
-  const filter = {
-    status: "Available",
-  };
+  const filter = { status: "Available" };
 
   if (minPrice || maxPrice) {
     filter.price = {};
@@ -136,13 +170,10 @@ const getAvailableRooms = asyncHandler(async (req, res) => {
   }
 
   const rooms = await Room.find(filter)
-    .populate("owner", "username email phoneNo")
+    .populate("owner", "username fullName email phoneNo")
     .select("-__v");
 
-  if (!rooms) {
-    throw new ApiError(404, "no available rooms");
-  }
-
+  // An empty result is valid, not an error.
   return res
     .status(200)
     .json(new ApiResponse(200, rooms, "Available rooms fetched successfully"));
@@ -150,171 +181,86 @@ const getAvailableRooms = asyncHandler(async (req, res) => {
 
 const getRoomProfile = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user?._id; // Assumes JWT auth middleware sets req.user
 
   const room = await Room.findById(roomId)
-    .populate("owner", "username email phoneNo")
+    .populate("owner", "username fullName email phoneNo")
     .populate("feedback.user", "username");
 
   if (!room) {
     throw new ApiError(404, "Room not found");
   }
 
-  let alreadyBookedByUser = false;
-  let bookingId = null;
-
-  if (userId) {
-    const existingBooking = await Booking.findOne({
-      room: roomId,
-      user: userId,
-      status: "approved",
-    });
-
-    if (existingBooking) {
-      alreadyBookedByUser = true;
-      bookingId = existingBooking._id;
-    }
-  }
-
-  const responsePayload = {
-    ...room.toObject(),
-    alreadyBookedByUser,
-    bookingId,
-  };
-
   return res
     .status(200)
-    .json(new ApiResponse(200, responsePayload, "Room details fetched"));
-});
-
-const updateRoom = asyncHandler(async (req, res) => {
-  const { roomId } = req.params;
-  const { price, status, facilities } = req.body;
-
-  // Check if price is provided and valid
-  if (price !== undefined && (isNaN(price) || price <= 0)) {
-    throw new ApiError(400, "Valid price is required.");
-  }
-
-  // Check if status is provided and valid
-  if (status && !["Available", "Booked"].includes(status)) {
-    throw new ApiError(
-      400,
-      "Invalid status value. It must be 'Available' or 'Booked'."
-    );
-  }
-
-  // Check if facilities are provided and valid
-  if (facilities) {
-    if (!Array.isArray(facilities)) {
-      throw new ApiError(400, "Facilities should be an array.");
-    }
-
-    const allowedFacilities = [
-      "Wi-Fi",
-      "Hot Water",
-      "Kitchen",
-      "Parking",
-      "Attach Bathroom",
-      "Balcony",
-      "Bed",
-      "Chair",
-      "Desk",
-      "Wardrobe",
-    ];
-
-    facilities.forEach((facility) => {
-      if (!allowedFacilities.includes(facility)) {
-        throw new ApiError(400, `${facility} is not a valid facility.`);
-      }
-    });
-  }
-
-  // Find the room and update the fields (price, status, and facilities)
-  const updatedRoom = await Room.findOneAndUpdate(
-    { _id: roomId, owner: req.user._id }, // Ensure room belongs to the owner
-    {
-      $set: {
-        ...(price !== undefined && { price }),
-        ...(status && { status }),
-        ...(facilities && { facilities }),
-      },
-    }, // Update the price, status, and/or facilities
-    { new: true } // Return the updated room
-  );
-
-  if (!updatedRoom) {
-    throw new ApiError(404, "Room not found or unauthorized");
-  }
-
-  return res.status(200).json({
-    success: true,
-    message: "Room updated successfully",
-    data: updatedRoom,
-  });
+    .json(new ApiResponse(200, room, "Room details fetched"));
 });
 
 const updateRoomDetails = asyncHandler(async (req, res) => {
-  const { roomId } = req.params; // Extract roomId from URL params
-  const { price, status, facilities } = req.body; // Get fields from the request body
-  const files = req.files; // Assuming images are in the 'files' field
+  const { roomId } = req.params;
+  const { price, status, facilities } = req.body;
+  const files = req.files;
 
-  // Find the room and ensure it belongs to the owner
   const room = await Room.findOne({ _id: roomId, owner: req.user._id });
   if (!room) {
-    return res.status(404).json({ message: "Room not found or unauthorized" });
+    throw new ApiError(404, "Room not found or unauthorized");
   }
 
-  // Handle deleting old images from Cloudinary
-  for (let imageUrl of room.images) {
-    await deleteFromCloudinary(imageUrl); // Delete old image from Cloudinary
+  const updateFields = {};
+
+  if (price !== undefined && price !== "") {
+    const numericPrice = Number(price);
+    if (Number.isNaN(numericPrice) || numericPrice < 0) {
+      throw new ApiError(400, "Price must be a non-negative number");
+    }
+    updateFields.price = numericPrice;
   }
 
-  // Handle uploading new images to Cloudinary
-  const uploadedImages = [];
+  if (status) {
+    if (!["Available", "Reserved", "Booked"].includes(status)) {
+      throw new ApiError(400, "Invalid status value");
+    }
+    updateFields.status = status;
+  }
+
+  const parsedFacilities = parseFacilities(facilities);
+  if (parsedFacilities !== undefined) {
+    updateFields.facilities = parsedFacilities;
+  }
+
+  // Images: only touch the existing set when NEW images are supplied.
+  // Upload the new ones first; only if they succeed, delete the old ones.
   if (files && files.length > 0) {
-    for (let file of files) {
-      const uploadResult = await uploadOnCloudinary(file.path); // Upload file to Cloudinary
-      if (uploadResult) {
-        uploadedImages.push(uploadResult.secure_url); // Store the secure URL
+    const uploadedImages = [];
+    for (const file of files) {
+      const uploadResult = await uploadOnCloudinary(file.path);
+      if (uploadResult?.secure_url) {
+        uploadedImages.push(uploadResult.secure_url);
       }
     }
+    if (uploadedImages.length === 0) {
+      throw new ApiError(500, "Failed to upload the new images");
+    }
+    // New images are safely stored — now remove the previous ones.
+    for (const imageUrl of room.images) {
+      await deleteFromCloudinary(imageUrl).catch(() => {});
+    }
+    updateFields.images = uploadedImages;
   }
 
-  // Prepare the update object
-  const updateFields = {
-    ...(price !== undefined && { price }),
-    ...(status && { status }),
-    ...(facilities && { facilities }),
-    ...(uploadedImages.length > 0 && { images: uploadedImages }), // Update images if new images exist
-  };
-
-  // Update the room with the new fields
   const updatedRoom = await Room.findOneAndUpdate(
-    { _id: roomId, owner: req.user._id }, // Ensure room belongs to the owner
-    { $set: updateFields }, // Use spread operator to only set the fields that are provided
-    { new: true } // Return the updated room
+    { _id: roomId, owner: req.user._id },
+    { $set: updateFields },
+    { new: true }
   );
 
-  if (status === "Available") {
-    console.log("room deleted when status is changes to available ...");
-    await Booking.deleteMany({
-      room: roomId,
-      status: "approved",
-    });
-  }
-
-  return res.status(200).json({
-    success: true,
-    message: "Room updated successfully",
-    data: updatedRoom,
-  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedRoom, "Room updated successfully"));
 });
 
 const deleteRoom = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
 
-  console.log("Deleting Room:", roomId, "Owner:", req.user._id);
   const room = await Room.findOneAndDelete({
     _id: roomId,
     owner: req.user._id,
@@ -324,43 +270,58 @@ const deleteRoom = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Room not found or unauthorized");
   }
 
+  await Owner.findByIdAndUpdate(req.user._id, { $pull: { rooms: roomId } });
+
   await Promise.all(
     room.images.map((imageUrl) =>
-      deleteFromCloudinary(imageUrl).catch(console.error)
+      deleteFromCloudinary(imageUrl).catch(() => {})
     )
   );
 
   return res
-    .status(204)
-    .json(new ApiResponse(204, null, "Room deleted successfully"));
+    .status(200)
+    .json(new ApiResponse(200, null, "Room deleted successfully"));
 });
 
 const addRoomFeedback = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
   const { comment, rating } = req.body;
 
-  const feedback = {
-    user: req.user._id,
-    comment,
-    rating,
-  };
-
-  const updatedRoom = await Room.findByIdAndUpdate(
-    roomId,
-    { $push: { feedback } },
-    { new: true }
-  );
-
-  if (rating) {
-    const avgRating =
-      updatedRoom.feedback.reduce((acc, curr) => acc + curr.rating, 0) /
-      updatedRoom.feedback.length;
-    await Room.findByIdAndUpdate(roomId, { rating: avgRating });
+  if (!comment || !comment.trim()) {
+    throw new ApiError(400, "Comment is required");
   }
 
+  let numericRating;
+  if (rating !== undefined && rating !== null && rating !== "") {
+    numericRating = Number(rating);
+    if (Number.isNaN(numericRating) || numericRating < 1 || numericRating > 5) {
+      throw new ApiError(400, "Rating must be between 1 and 5");
+    }
+  }
+
+  const room = await Room.findById(roomId);
+  if (!room) {
+    throw new ApiError(404, "Room not found");
+  }
+
+  room.feedback.push({
+    user: req.user._id,
+    comment: comment.trim(),
+    ...(numericRating !== undefined && { rating: numericRating }),
+  });
+
+  // Average only over feedback that actually carries a rating, so an
+  // unrated comment can never produce NaN.
+  const rated = room.feedback.filter((f) => typeof f.rating === "number");
+  room.rating = rated.length
+    ? rated.reduce((acc, curr) => acc + curr.rating, 0) / rated.length
+    : 0;
+
+  await room.save();
+
   return res
-    .status(200)
-    .json(new ApiResponse(200, updatedRoom, "Feedback added successfully"));
+    .status(201)
+    .json(new ApiResponse(201, room, "Feedback added successfully"));
 });
 
 export {
@@ -368,7 +329,6 @@ export {
   getNearbyAvailableRooms,
   getAvailableRooms,
   getRoomProfile,
-  updateRoom,
   updateRoomDetails,
   deleteRoom,
   addRoomFeedback,

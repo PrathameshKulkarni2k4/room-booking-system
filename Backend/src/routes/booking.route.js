@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, requireOwner, requireUser } from "../middlewares/auth.middleware.js";
 import {
   checkUserBookedRoom,
   createBooking,
@@ -13,11 +13,14 @@ const router = Router();
 
 router
   .route("/create-booking/:roomId")
-  .post(upload.none(), verifyJWT, createBooking); // create a booking
-router.route("/:bookingId").patch(verifyJWT, updateBookingStatus); // update booking status
-router.route("/user-rooms").get(verifyJWT, getUserBookedRooms); // get all the rooms booked by user
+  .post(upload.none(), verifyJWT, requireUser, createBooking); // create a booking (seeker only)
 
-router.route("/user-booking/:roomId").get(verifyJWT, checkUserBookedRoom); // check if the room booked by logged user
-router.route("/unbook/:roomId").delete(verifyJWT, unbookRoom); // cancle the booking by logged user
+router.route("/:bookingId").patch(verifyJWT, requireOwner, updateBookingStatus); // owner approves/rejects (ownership checked in controller)
+
+router.route("/user-rooms").get(verifyJWT, requireUser, getUserBookedRooms); // rooms booked by the logged-in user
+
+router.route("/user-booking/:roomId").get(verifyJWT, requireUser, checkUserBookedRoom); // has the logged-in user booked this room
+
+router.route("/unbook/:roomId").delete(verifyJWT, requireUser, unbookRoom); // cancel a booking (seeker only)
 
 export default router;

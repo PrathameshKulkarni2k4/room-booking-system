@@ -19,6 +19,11 @@ app.use(
   })
 );
 
+// The payment webhook must receive the RAW body so its HMAC signature can be
+// verified. This MUST be mounted before express.json(), which would otherwise
+// consume and re-serialise the payload and break the signature check.
+app.use("/api/v1/payments/webhook", express.raw({ type: "application/json" }));
+
 app.use(express.json({ limit: "16kb" })); // Set a limit for JSON body size
 app.use(express.urlencoded({ extended: true, limit: "16kb" })); // Set a limit for URL-encoded body size
 app.use(express.static("public")); // Serve static files from 'public' directory

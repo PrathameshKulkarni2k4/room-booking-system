@@ -58,7 +58,8 @@ const roomSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["Available", "Booked"],
+      // "Reserved" = an active pending request is holding the room.
+      enum: ["Available", "Reserved", "Booked"],
       default: "Available",
       required: true,
     },

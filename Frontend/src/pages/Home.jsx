@@ -1,16 +1,9 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { HiMenu, HiX } from "react-icons/hi";
 import HowItWorks from "../components/HowItWorks";
 import FAQ from "../components/FAQ";
 import ContactUs from "../components/ContactUs";
 import heroImage from "../assets/homeroom.avif";
 
 const Home = () => {
-  useEffect(() => {
-    localStorage.clear();
-  }, []);
-
   return (
     <div className="bg-gray-50 font-sans">
       {/* Hero Section */}
