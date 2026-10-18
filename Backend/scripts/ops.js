@@ -34,7 +34,7 @@ async function request(url, options = {}) {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   const text = await res.text();
-  return { status: res.status, body: text.slice(0, 4000) };
+  return { status: res.status, body: text.slice(0, 8000) };
 }
 
 const actions = {
@@ -88,6 +88,47 @@ const actions = {
     return request(url.toString(), {
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  // Pulls the most recent log lines for the service (helps diagnose a
+  // failed deploy). Requires RENDER_API_KEY and RENDER_SERVICE_ID.
+  async "render-logs"() {
+    const key = process.env.RENDER_API_KEY;
+    if (!key) throw new Error("RENDER_API_KEY is not set");
+    const serviceId = process.env.RENDER_SERVICE_ID;
+    if (!serviceId) throw new Error("RENDER_SERVICE_ID is not set");
+
+    const auth = {
+      Authorization: `Bearer ${key}`,
+      Accept: "application/json",
+    };
+
+    // Resolve the owner id (required by the logs endpoint).
+    let ownerId = process.env.RENDER_OWNER_ID;
+    if (!ownerId) {
+      const svc = await request(
+        `https://api.render.com/v1/services/${serviceId}`,
+        { headers: auth }
+      );
+      if (svc.status !== 200) return svc;
+      try {
+        const parsed = JSON.parse(svc.body);
+        ownerId = parsed.ownerId || (parsed.service && parsed.service.ownerId);
+      } catch {
+        // fall through to the error below
+      }
+    }
+    if (!ownerId) {
+      throw new Error("Could not determine the Render owner id");
+    }
+
+    const url = new URL("https://api.render.com/v1/logs");
+    url.searchParams.set("ownerId", ownerId);
+    url.searchParams.append("resource", serviceId);
+    url.searchParams.set("direction", "backward");
+    url.searchParams.set("limit", "60");
+
+    return request(url.toString(), { headers: auth });
   },
 
   // Runs every read-only check in one go and reports each result.
