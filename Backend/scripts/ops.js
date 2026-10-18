@@ -24,8 +24,15 @@ const BACKEND_URL =
 
 const action = process.argv[2];
 
+// A cold Render free-tier service can take ~60s to wake, so allow generous
+// time but never hang forever.
+const FETCH_TIMEOUT_MS = Number(process.env.OPS_FETCH_TIMEOUT_MS || 75000);
+
 async function request(url, options = {}) {
-  const res = await fetch(url, options);
+  const res = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
   const text = await res.text();
   return { status: res.status, body: text.slice(0, 4000) };
 }
