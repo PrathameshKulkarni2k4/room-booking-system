@@ -1,0 +1,67 @@
+name: ops
+
+# An "ops bridge": an agent (or you) can trigger this workflow to run one
+# infrastructure action against Render, Vercel or MongoDB Atlas, and read the
+# result back from ops/last-run.json in the repo.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Which ops action to run
+        required: true
+        type: choice
+        options:
+          - health
+          - render-redeploy
+          - render-status
+          - vercel-redeploy
+          - vercel-status
+          - db-stats
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    name: Run ops action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: Backend
+        run: npm ci
+
+      - name: Run ops action
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://room-booking-system-backend-7exv.onrender.com' }}
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB_NAME: users
+        run: node Backend/scripts/ops.js "${{ inputs.action }}"
+
+      - name: Publish result to the repo
+        if: always()
+        run: |
+          git config user.email "ops-bot@users.noreply.github.com"
+          git config user.name "ops-bot"
+          git add -f ops/last-run.json
+          if git diff --cached --quiet; then
+            echo "No change to publish"
+          else
+            git commit -m "ops: ${{ inputs.action }} [skip ci]"
+            git push
+          fi
