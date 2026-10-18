@@ -1,0 +1,33 @@
+{
+  "action": "all",
+  "startedAt": "2026-10-18T14:40:47.654Z",
+  "ok": true,
+  "data": {
+    "health": {
+      "status": 200,
+      "body": "{\"status\":\"ok\",\"uptime\":226,\"timestamp\":\"2026-10-18T14:40:47.810Z\"}"
+    },
+    "cors-check": {
+      "status": 204,
+      "origin": "https://roombuddyforstudent.vercel.app",
+      "allowOrigin": "https://roombuddyforstudent.vercel.app",
+      "allowCredentials": "true"
+    },
+    "render-status": {
+      "status": 200,
+      "body": "[{\"deploy\":{\"id\":\"dep-dbadisu1egvs73aa4ao0\",\"commit\":{\"id\":\"3c939e3f6c99c8fb4aadb6cd530c2aa1b3dce9dd\",\"message\":\"feat(ops): add cors-check action and include it in 'all'\",\"createdAt\":\"2026-10-18T14:36:05Z\"},\"status\":\"live\",\"trigger\":\"deploy_hook\",\"createdAt\":\"2026-10-18T14:36:35.823282Z\",\"updatedAt\":\"2026-10-18T14:37:46.960917Z\",\"startedAt\":\"2026-10-18T14:36:35.796483Z\",\"finishedAt\":\"2026-10-18T14:37:14.031516Z\"},\"cursor\":\"I2jqrw_e2DZpc3UxZWd2czczYWE0YW8w\"},{\"deploy\":{\"id\":\"dep-dbadike7bikc73e76beg\",\"commit\":{\"id\":\"f0f5b2d20214a2325de5085bf75153f33b1ce422\",\"message\":\"fix(cors): always allow the first-party frontend origin; add render-env diagnostic action\",\"createdAt\":\"2026-10-18T14:35:28Z\"},\"status\":\"canceled\",\"trigger\":\"deploy_hook\",\"createdAt\":\"2026-10-18T14:36:01.415185Z\",\"updatedAt\":\"2026-10-18T14:36:36.121982Z\",\"startedAt\":\"2026-10-18T14:36:01.386981Z\",\"finishedAt\":\"2026-10-18T14:36:36.121368Z\"},\"cursor\":\"I2jqrw_e2DZpa2U3YmlrYzczZTc2YmVn\"},{\"deploy\":{\"id\":\"dep-dbadc4e7bikc73e6g2vg\",\"commit\":{\"id\":\"aa1e1dacf8f9d121f4917c6f39c930caa210584c\",\"message\":\"fix(deploy): pin Node to 20.x so Render stops installing Node 26 (bcrypt native module crash on start)\",\"createdAt\":\"2026-10-18T14:21:40Z\"},\"status\":\"deactivated\",\"trigger\":\"deploy_hook\",\"createdAt\":\"2026-10-18T14:22:09.542617Z\",\"updatedAt\":\"2026-10-18T14:37:14.030773Z\",\"startedAt\":\"2026-10-18T14:22:09.513331Z\",\"finishedAt\":\"2026-10-18T14:23:00.611619Z\"},\"cursor\":\"I2jqrw_e2DZjNGU3YmlrYzczZTZnMnZn\"}]\n"
+    },
+    "vercel-status": {
+      "status": 403,
+      "body": "{\"error\":{\"code\":\"forbidden\",\"message\":\"Not authorized\"}}"
+    },
+    "db-stats": {
+      "counts": {
+        "users": 33,
+        "owners": 9,
+        "rooms": 27,
+        "bookings": 50
+      }
+    }
+  }
+}
