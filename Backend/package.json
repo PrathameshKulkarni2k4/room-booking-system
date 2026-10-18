@@ -1,12 +1,16 @@
 {
-  "name": "02project",
+  "name": "roombuddy-backend",
   "version": "1.0.0",
-  "description": "a project to learn backend",
+  "description": "RoomBuddy API — a PG and room-booking platform for students and owners",
   "license": "ISC",
   "author": "Prathamesh Kulkarni",
   "type": "module",
-  "main": "index.js",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "start": "node src/index.js",
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
   },
   "devDependencies": {

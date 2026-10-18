@@ -5,16 +5,23 @@ import { errorHandler } from "./utils/errorHandler.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initializeSocket } from "./utils/socket.js";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 dotenv.config({ path: "./.env" });
 
 const app = express();
 
-// Middleware setup
+// CORS: accept a comma-separated allow-list (CORS_ORIGINS) while remaining
+// backwards compatible with the single-origin CORS_ORIGIN variable.
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: allowedOrigins.length ? allowedOrigins : true,
     credentials: true,
   })
 );
@@ -60,6 +67,16 @@ app.use("/api/v1/owner", ownerRouter);
 app.use("/api/v1/verify", verificationRouter);
 app.use("/api/v1/booking", bookingRouter);
 app.use("/api/v1/payments", paymentRouter);
+
+// Liveness/health probe for uptime monitoring (UptimeRobot, Render health checks).
+app.get("/health", (req, res) => {
+  const dbUp = mongoose.connection.readyState === 1;
+  return res.status(dbUp ? 200 : 503).json({
+    status: dbUp ? "ok" : "degraded",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Error handling middleware (should be the last middleware)
 app.use(errorHandler);
