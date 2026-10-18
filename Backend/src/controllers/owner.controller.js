@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { Owner } from "../models/owner.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Notification } from "../models/notification.model.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (ownerId) => {
   try {
@@ -235,10 +236,57 @@ const updateOwnerDetails = asyncHandler(async (req, res) => {
     );
 });
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch (error) {
+    throw new ApiError(401, "Invalid or expired refresh token");
+  }
+
+  const owner = await Owner.findById(decodedToken?._id);
+  if (!owner) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+
+  if (owner.refreshToken !== incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token is expired or already used");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    owner._id
+  );
+
+  const options = { httpOnly: true, secure: true };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken, refreshToken },
+        "Access token refreshed"
+      )
+    );
+});
+
 export {
   registerOwner,
   loginOwner,
   logoutOwner,
   getOwnerProfile,
   updateOwnerDetails,
+  refreshAccessToken,
 };

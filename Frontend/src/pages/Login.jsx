@@ -1,21 +1,17 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import signupImg from "../assets/home.png";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const BASE = import.meta.env.VITE_API_BASE_URL;
-
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { loginUser } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-
-  
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,23 +20,11 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(`${BASE}/api/v1/users/login`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.status === 200) {
-        const { accessToken, user } = response.data.data;
-
-        localStorage.setItem("usertoken", accessToken);
-        localStorage.setItem("user", JSON.stringify(user));
-
-        toast.success(response.data.message);
-        setTimeout(() => {
-          navigate("/rooms");
-        }, 1500);
-      }
+      const data = await loginUser(formData);
+      toast.success(data.message || "Login successful!");
+      setTimeout(() => {
+        navigate("/rooms");
+      }, 1200);
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       toast.error(error.response?.data?.message || "Login failed. Try again.");

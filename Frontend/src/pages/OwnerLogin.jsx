@@ -1,15 +1,14 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import loginImage from "../assets/home.png"; // Image
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"; // Importing the eye icons
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const BASE = import.meta.env.VITE_API_BASE_URL;
+import { useAuth } from "../context/AuthContext";
 
 const OwnerLogin = () => {
   const navigate = useNavigate();
+  const { loginOwner } = useAuth();
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -21,9 +20,7 @@ const OwnerLogin = () => {
     e.preventDefault();
 
     try {
-      const payload = {
-        password: formData.password,
-      };
+      const payload = { password: formData.password };
 
       // Determine whether user entered email or username
       if (formData.identifier.includes("@")) {
@@ -32,17 +29,10 @@ const OwnerLogin = () => {
         payload.username = formData.identifier;
       }
 
-      const response = await axios.post(`${BASE}/api/v1/owner/login`, payload);
+      await loginOwner(payload);
 
-      if (response.status === 200) {
-        const { accessToken, user } = response.data.data;
-
-        localStorage.setItem("ownertoken", accessToken);
-        localStorage.setItem("owner", JSON.stringify(user));
-
-        toast.success("Owner login successful!");
-        navigate("/owner-profile");
-      }
+      toast.success("Owner login successful!");
+      navigate("/owner-profile");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed! Try again.");
     }
