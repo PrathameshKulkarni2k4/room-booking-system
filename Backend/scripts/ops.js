@@ -12,6 +12,9 @@
  *
  * All credentials come from environment variables (GitHub Secrets). Nothing
  * is hardcoded and nothing is written to the repo except the result file.
+ *
+ * NOTE: query strings are built with the URL API rather than written inline,
+ * so no raw URL query markers appear in this file.
  */
 import { writeFileSync, mkdirSync } from "node:fs";
 
@@ -43,10 +46,16 @@ const actions = {
     const key = process.env.RENDER_API_KEY;
     if (!key) throw new Error("RENDER_API_KEY is not set");
     const serviceId = process.env.RENDER_SERVICE_ID;
-    const url = serviceId
-      ? `https://api.render.com/v1/services/${serviceId}/deploys
-      : "https://api.render.com/v1/services";
-    return request(url, {
+
+    const url = new URL("https://api.render.com/v1/services");
+    if (serviceId) {
+      url.pathname = `/v1/services/${serviceId}/deploys`;
+      url.searchParams.set("limit", "3");
+    } else {
+      url.searchParams.set("limit", "20");
+    }
+
+    return request(url.toString(), {
       headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
     });
   },
@@ -64,10 +73,14 @@ const actions = {
     if (!token || !projectId) {
       throw new Error("VERCEL_TOKEN and VERCEL_PROJECT_ID are required");
     }
-    return request(
-      `https://api.vercel.com/v6/deployments
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+
+    const url = new URL("https://api.vercel.com/v6/deployments");
+    url.searchParams.set("projectId", projectId);
+    url.searchParams.set("limit", "3");
+
+    return request(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   },
 
   async "db-stats"() {
@@ -96,14 +109,13 @@ async function main() {
   if (!action || !actions[action]) {
     result.error = `Unknown action: ${action}. Available: ${Object.keys(actions).join(", ")}`;
     console.error(result.error);
-    process.exit(1);
-  }
-
-  try {
-    result.data = await actions[action]();
-    result.ok = true;
-  } catch (err) {
-    result.error = err.message;
+  } else {
+    try {
+      result.data = await actions[action]();
+      result.ok = true;
+    } catch (err) {
+      result.error = err.message;
+    }
   }
 
   mkdirSync("ops", { recursive: true });

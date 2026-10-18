@@ -56,6 +56,10 @@ jobs:
       - name: Publish result to the repo
         if: always()
         run: |
+          if [ ! -f ops/last-run.json ]; then
+            echo "No result file to publish"
+            exit 0
+          fi
           git config user.email "ops-bot@users.noreply.github.com"
           git config user.name "ops-bot"
           git add -f ops/last-run.json
