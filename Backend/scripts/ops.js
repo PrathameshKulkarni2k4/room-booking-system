@@ -90,6 +90,20 @@ const actions = {
     });
   },
 
+  // Runs every read-only check in one go and reports each result.
+  async all() {
+    const names = ["health", "render-status", "vercel-status", "db-stats"];
+    const out = {};
+    for (const name of names) {
+      try {
+        out[name] = await actions[name]();
+      } catch (err) {
+        out[name] = { error: err.message };
+      }
+    }
+    return out;
+  },
+
   async "db-stats"() {
     const uri = process.env.MONGODB_URI;
     if (!uri) throw new Error("MONGODB_URI is not set");

@@ -11,6 +11,7 @@ on:
         required: true
         type: choice
         options:
+          - all
           - health
           - render-redeploy
           - render-status
