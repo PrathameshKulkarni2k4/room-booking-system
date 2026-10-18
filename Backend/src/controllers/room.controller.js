@@ -29,7 +29,10 @@ const parseFacilities = (raw) => {
     try {
       value = JSON.parse(value);
     } catch {
-      value = value.split(",").map((s) => s.trim()).filter(Boolean);
+      value = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
   }
   if (!Array.isArray(value)) {

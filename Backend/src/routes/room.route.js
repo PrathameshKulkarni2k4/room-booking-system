@@ -1,7 +1,11 @@
 import express from "express";
 const router = express.Router();
 // Middlewares
-import { verifyJWT, requireOwner, requireUser } from "../middlewares/auth.middleware.js";
+import {
+  verifyJWT,
+  requireOwner,
+  requireUser,
+} from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 import {

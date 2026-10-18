@@ -14,7 +14,11 @@ const app = express();
 
 // CORS: accept a comma-separated allow-list (CORS_ORIGINS) while remaining
 // backwards compatible with the single-origin CORS_ORIGIN variable.
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "")
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  process.env.CORS_ORIGIN ||
+  ""
+)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

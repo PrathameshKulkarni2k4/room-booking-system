@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT, requireOwner, requireUser } from "../middlewares/auth.middleware.js";
+import {
+  verifyJWT,
+  requireOwner,
+  requireUser,
+} from "../middlewares/auth.middleware.js";
 import {
   checkUserBookedRoom,
   createBooking,
@@ -19,7 +23,9 @@ router.route("/:bookingId").patch(verifyJWT, requireOwner, updateBookingStatus);
 
 router.route("/user-rooms").get(verifyJWT, requireUser, getUserBookedRooms); // rooms booked by the logged-in user
 
-router.route("/user-booking/:roomId").get(verifyJWT, requireUser, checkUserBookedRoom); // has the logged-in user booked this room
+router
+  .route("/user-booking/:roomId")
+  .get(verifyJWT, requireUser, checkUserBookedRoom); // has the logged-in user booked this room
 
 router.route("/unbook/:roomId").delete(verifyJWT, requireUser, unbookRoom); // cancel a booking (seeker only)
 

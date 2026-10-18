@@ -136,7 +136,9 @@ const getUserBookedRooms = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, bookedRooms, "Booked rooms fetched successfully"));
+    .json(
+      new ApiResponse(200, bookedRooms, "Booked rooms fetched successfully")
+    );
 });
 
 const checkUserBookedRoom = asyncHandler(async (req, res) => {
@@ -169,7 +171,9 @@ const unbookRoom = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No approved booking found to cancel");
   }
 
-  await Room.findByIdAndUpdate(booking.room._id, { $set: { status: "Available" } });
+  await Room.findByIdAndUpdate(booking.room._id, {
+    $set: { status: "Available" },
+  });
 
   await sendNotification(req.app.get("io"), {
     receiverId: booking.room.owner,
@@ -182,7 +186,9 @@ const unbookRoom = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, booking, "Booking cancelled and owner notified"));
+    .json(
+      new ApiResponse(200, booking, "Booking cancelled and owner notified")
+    );
 });
 
 export {

@@ -10,7 +10,9 @@ const storage = multer.diskStorage({
     // Never trust the client filename: generate a random, safe name and
     // keep only a whitelisted extension.
     const ext = path.extname(file.originalname).toLowerCase();
-    const safeExt = [".jpg", ".jpeg", ".png", ".webp"].includes(ext) ? ext : ".jpg";
+    const safeExt = [".jpg", ".jpeg", ".png", ".webp"].includes(ext)
+      ? ext
+      : ".jpg";
     cb(null, `${crypto.randomUUID()}${safeExt}`);
   },
 });
