@@ -12,9 +12,15 @@ dotenv.config({ path: "./.env" });
 
 const app = express();
 
+// First-party origins that must always be allowed, even if the environment
+// variable is missing or stale.
+const DEFAULT_ALLOWED_ORIGINS = ["https://roombuddyforstudent.vercel.app"];
+
 // CORS: accept a comma-separated allow-list (CORS_ORIGINS) while remaining
-// backwards compatible with the single-origin CORS_ORIGIN variable.
-const allowedOrigins = (
+// backwards compatible with the single-origin CORS_ORIGIN variable. The
+// defaults above are merged in so a stale env var cannot lock out the
+// deployed frontend.
+const configuredOrigins = (
   process.env.CORS_ORIGINS ||
   process.env.CORS_ORIGIN ||
   ""
@@ -22,6 +28,10 @@ const allowedOrigins = (
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+const allowedOrigins = [
+  ...new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]),
+];
 
 app.use(
   cors({

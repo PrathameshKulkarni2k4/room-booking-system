@@ -17,6 +17,7 @@ on:
           - render-status
           - render-logs
           - render-diagnose
+          - render-env
           - vercel-redeploy
           - vercel-status
           - db-stats

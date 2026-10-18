@@ -131,6 +131,36 @@ const actions = {
     return request(url.toString(), { headers: auth });
   },
 
+  // Lists the service's environment variable KEYS and any non-secret values,
+  // so a CORS/origin misconfiguration is visible without exposing secrets.
+  async "render-env"() {
+    const key = process.env.RENDER_API_KEY;
+    const serviceId = process.env.RENDER_SERVICE_ID;
+    if (!key || !serviceId) {
+      throw new Error("RENDER_API_KEY and RENDER_SERVICE_ID are required");
+    }
+    const r = await request(
+      `https://api.render.com/v1/services/${serviceId}/env-vars`,
+      {
+        headers: {
+          Authorization: `Bearer ${key}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    if (r.status !== 200) return r;
+    try {
+      const arr = JSON.parse(r.body);
+      const summary = arr.map((e) => ({
+        key: e.envVar && e.envVar.key,
+        value: e.envVar && e.envVar.value,
+      }));
+      return { status: r.status, env: summary };
+    } catch {
+      return r;
+    }
+  },
+
   // Deep-dive on Render: recent deploys, the newest deploy's detail, and
   // build-type logs (to see why a deploy failed).
   async "render-diagnose"() {
