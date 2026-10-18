@@ -222,9 +222,37 @@ const actions = {
     return out;
   },
 
+  // Simulates the browser's CORS preflight from the frontend origin and
+  // reports the Access-Control-Allow-Origin header the API returns.
+  async "cors-check"() {
+    const origin =
+      process.env.CHECK_ORIGIN || "https://roombuddyforstudent.vercel.app";
+    const res = await fetch(`${BACKEND_URL}/api/v1/users/login`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    return {
+      status: res.status,
+      origin,
+      allowOrigin: res.headers.get("access-control-allow-origin"),
+      allowCredentials: res.headers.get("access-control-allow-credentials"),
+    };
+  },
+
   // Runs every read-only check in one go and reports each result.
   async all() {
-    const names = ["health", "render-status", "vercel-status", "db-stats"];
+    const names = [
+      "health",
+      "cors-check",
+      "render-status",
+      "vercel-status",
+      "db-stats",
+    ];
     const out = {};
     for (const name of names) {
       try {

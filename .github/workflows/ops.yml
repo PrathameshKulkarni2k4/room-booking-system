@@ -18,6 +18,7 @@ on:
           - render-logs
           - render-diagnose
           - render-env
+          - cors-check
           - vercel-redeploy
           - vercel-status
           - db-stats
