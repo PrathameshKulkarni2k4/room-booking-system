@@ -131,6 +131,67 @@ const actions = {
     return request(url.toString(), { headers: auth });
   },
 
+  // Deep-dive on Render: recent deploys, the newest deploy's detail, and
+  // build-type logs (to see why a deploy failed).
+  async "render-diagnose"() {
+    const key = process.env.RENDER_API_KEY;
+    const serviceId = process.env.RENDER_SERVICE_ID;
+    if (!key || !serviceId) {
+      throw new Error("RENDER_API_KEY and RENDER_SERVICE_ID are required");
+    }
+    const auth = {
+      Authorization: `Bearer ${key}`,
+      Accept: "application/json",
+    };
+
+    const out = {};
+
+    const deploysUrl = new URL(
+      `https://api.render.com/v1/services/${serviceId}/deploys`
+    );
+    deploysUrl.searchParams.set("limit", "6");
+    out.deploys = await request(deploysUrl.toString(), { headers: auth });
+
+    let latestId = null;
+    try {
+      const arr = JSON.parse(out.deploys.body);
+      latestId = arr[0] && arr[0].deploy && arr[0].deploy.id;
+    } catch {
+      // ignore
+    }
+    if (latestId) {
+      out.latestDeploy = await request(
+        `https://api.render.com/v1/services/${serviceId}/deploys/${latestId}`,
+        { headers: auth }
+      );
+    }
+
+    let ownerId = process.env.RENDER_OWNER_ID;
+    if (!ownerId) {
+      const svc = await request(
+        `https://api.render.com/v1/services/${serviceId}`,
+        { headers: auth }
+      );
+      try {
+        const parsed = JSON.parse(svc.body);
+        ownerId = parsed.ownerId || (parsed.service && parsed.service.ownerId);
+      } catch {
+        // ignore
+      }
+    }
+    if (ownerId) {
+      const lurl = new URL("https://api.render.com/v1/logs");
+      lurl.searchParams.set("ownerId", ownerId);
+      lurl.searchParams.append("resource", serviceId);
+      lurl.searchParams.append("type", "build");
+      lurl.searchParams.set("direction", "backward");
+      lurl.searchParams.set("limit", "40");
+      out.buildLogs = await request(lurl.toString(), { headers: auth });
+    }
+
+    return out;
+  },
+
   // Runs every read-only check in one go and reports each result.
   async all() {
     const names = ["health", "render-status", "vercel-status", "db-stats"];
