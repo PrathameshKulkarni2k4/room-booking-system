@@ -53,7 +53,9 @@ jobs:
           MONGODB_DB_NAME: users
         run: node Backend/scripts/ops.js "${{ inputs.action }}"
 
-      - name: Publish result to the repo
+      # main is a protected branch, so the result is published to a dedicated
+      # branch instead. The agent reads ops/last-run.json from ref 'ops-results'.
+      - name: Publish result to the ops-results branch
         if: always()
         run: |
           if [ ! -f ops/last-run.json ]; then
@@ -62,10 +64,7 @@ jobs:
           fi
           git config user.email "ops-bot@users.noreply.github.com"
           git config user.name "ops-bot"
+          git checkout -B ops-results
           git add -f ops/last-run.json
-          if git diff --cached --quiet; then
-            echo "No change to publish"
-          else
-            git commit -m "ops: ${{ inputs.action }} [skip ci]"
-            git push
-          fi
+          git commit -m "ops: ${{ inputs.action }} [skip ci]"
+          git push -f origin ops-results

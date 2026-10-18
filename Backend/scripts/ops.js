@@ -24,9 +24,9 @@ const BACKEND_URL =
 
 const action = process.argv[2];
 
-// A cold Render free-tier service can take ~60s to wake, so allow generous
-// time but never hang forever.
-const FETCH_TIMEOUT_MS = Number(process.env.OPS_FETCH_TIMEOUT_MS || 75000);
+// A cold Render free-tier service can take a minute or more to wake, so allow
+// generous time but never hang forever.
+const FETCH_TIMEOUT_MS = Number(process.env.OPS_FETCH_TIMEOUT_MS || 120000);
 
 async function request(url, options = {}) {
   const res = await fetch(url, {
@@ -128,7 +128,10 @@ async function main() {
   mkdirSync("ops", { recursive: true });
   writeFileSync("ops/last-run.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
-  process.exit(result.ok ? 0 : 1);
+
+  // Always exit 0: the outcome is carried in the result file, so the workflow
+  // stays green and the agent reads ok/error from ops/last-run.json.
+  process.exit(0);
 }
 
 main();
